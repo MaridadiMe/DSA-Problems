@@ -1,0 +1,104 @@
+"""
+Question found at https://www.algoexpert.io/questions/river-sizes
+
+You are given a two-dimensional array (a matrix) of potentially unequal height and width containing only 0s and 1s. Each 0 represents part of a river. A river consists of any number of 1s that are either horizontally of vertically adjacent (but not diagonally adjacent). The number of adjacent 1s forming a river determine its size.
+
+Note that a river can twist. In other wordsm it does not have to be straight vertical line or a straight horizontal line; it can be L-shape for example.
+
+Write a function that returns an array of the sizes of all rivers represented in the input matrix. The sizes do not need to be in any particular order
+"""
+
+
+class StackFrontier:
+    def __init__(self):
+        self.frontier = []
+
+    def add(self, node):
+        self.frontier.append(node)
+
+    def contains_item(self, item):
+        return any(item == item_ for item_ in self.frontier)
+
+    def empty(self):
+        return len(self.frontier) == 0
+
+    def remove(self):
+        if self.empty():
+            raise Exception("Empty Frontier")
+        else:
+            return self.frontier.pop()
+
+class QueueFrontier(StackFrontier):
+    
+    def remove(self):
+        if self.empty():
+            raise Exception("Empty Frontier")
+        else:
+            node = self.frontier[0]
+            self.frontier = self.frontier[1:]
+            return node
+
+class Puzzle:
+    def __init__(self, matrix_):
+        self.matrix = matrix_
+        self.visited = set()
+
+    def neighbors(self, item):
+        r,c = item
+        neighs = []
+        potential_neighbors = [
+                ('up', (r-1, c)),
+                ('down', (r+1, c)),
+                ('left', (r, c-1)),
+                ('right', (r, c+1))
+            ]
+        if self.matrix[r][c] == 1:
+            for pos, (j,i) in potential_neighbors:
+                try:
+                    if (j>=0 and i>=0) and self.matrix[j][i] == 1:
+                        neighs.append((j,i))
+    
+                except IndexError:
+                    continue
+        return neighs
+
+    def traverse(self, item):
+        if item in self.visited:
+            return 0
+            
+        r,c = item
+        frontier = QueueFrontier()
+        frontier.add(item)
+        visited = 0
+        
+        while True:
+            if frontier.empty():
+                return visited
+
+            k,l = river = frontier.remove()
+           
+            visited += 1
+
+            if self.matrix[k][l] == 1:
+                self.visited.add(river)
+                neis = self.neighbors((k,l))
+                for j,i in neis:
+                    if (j,i) not in self.visited and not frontier.contains_item((j,i)):
+                        frontier.add((j,i))
+  
+    def riverSizes(self):
+        sizes = []
+        for r, row in enumerate(self.matrix):
+            for c, item in enumerate(row):
+    
+                if item == 1:
+                    riversize = self.traverse((r,c))
+                    if riversize > 0:
+                        sizes.append(riversize)
+        return sizes
+
+
+def riverSizes(matrix):
+    # Write your code here.
+    puzzle = Puzzle(matrix)
+    return puzzle.riverSizes()
